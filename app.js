@@ -77,7 +77,7 @@ function renderBottomNav() {
 
 function renderControls() {
   const needsCard = ["immerse", "dossier", "solar", "quiz"].includes(state.mode);
-  const needsHouse = state.mode === "solar";
+  const needsHouse = state.mode === "solar" || (state.mode === "dossier" && state.dossierTab === "solar");
   return `<aside class="panel"><div class="panel-inner">
     <h2>${DATA.modes.find((m) => m.id === state.mode)?.name || "Режим"}</h2>
     ${needsCard ? `<div class="field"><label for="cardSelect">Карта</label><select id="cardSelect">${optionList(DATA.cards, state.cardId)}</select></div>` : ""}
@@ -122,6 +122,66 @@ function findDossier(card) {
   return (DATA.dossiers || []).find((item) => item.card_id === card.id);
 }
 
+function solarHouseFocus(card, house) {
+  const name = card.name;
+  const lowerHouse = house.name.toLowerCase();
+  const houseQuestion = house.main_question || "Как эта сфера хочет проявиться в году?";
+  if (name === "Девятка Жезлы" && house.number === 1) {
+    return {
+      formula: "Год учит входить в новый цикл не из доказательства силы, а из зрелой собранности: я знаю, сколько во мне огня, где моя граница и как мне не жить в постоянной обороне.",
+      yearTask: "В 1 доме 9 Жезлов становится темой личности, тела, внешнего проявления и первого импульса года. Это не про то, что весь год надо держать удар. Скорее, год показывает, где ты уже выросла, многое выдержала и теперь можешь опираться на опыт без привычки напрягаться заранее. Важно научиться показывать себя не через усталую стойкость, а через спокойную силу и право выбирать, кого и что впускать в свое поле.",
+      resource: [
+        "Собрать себя вокруг собственного опыта: признать, что ты уже не начинаешь с нуля.",
+        "Выстроить личные границы в теле, графике, общении и самопрезентации без оправданий.",
+        "Показывать силу спокойно: не доказывать, не соревноваться, не жить в режиме ожидания нападения.",
+      ],
+      shadow: [
+        "Входить в год как в оборону: будто нужно заранее защищаться от людей, задач и чужих ожиданий.",
+        "Путать самостоятельность с закрытостью: никого не подпускать, даже когда контакт мог бы поддержать.",
+        "Держать тело в постоянной мобилизации: напряженные плечи, сжатая спина, невозможность расслабиться.",
+      ],
+      practice: [
+        "Сформулировать личное правило года: что я больше не доказываю.",
+        "Отследить, где тело сжимается до того, как реально появилась угроза.",
+        "Выбрать один способ быть видимой без борьбы: спокойный пост, честный разговор, обновление образа, ясное 'нет'.",
+      ],
+      eventMarkers: [
+        "Ситуации, где нужно отстоять свое время, тело, стиль, желание или право на паузу.",
+        "Повторы старого сценария: 'я должна выдержать сама'.",
+        "Моменты, когда окружающие проверяют твою границу, а ты учишься отвечать без атаки.",
+      ],
+      questions: [
+        "Где я уже достаточно сильна и могу перестать это доказывать?",
+        "Какая моя граница в этом году защищает жизнь, а какая держит меня в одиночестве?",
+        "Как мое тело показывает, что я снова в режиме обороны?",
+        "Каким человеком я становлюсь, если выбираю спокойную силу вместо постоянной готовности к бою?",
+      ],
+    };
+  }
+  const cardLine = String(card.display_formula || card.core_formula || name).replace(/[.]+$/, "");
+  return {
+    formula: `В теме “${house.name}” карта “${name}” показывает, какие ситуации, люди и внутренние реакции будут чаще всего включать эту тему в течение года.`,
+    yearTask: `${house.core_formula || houseQuestion} Здесь важно спросить не “что значит ${name} вообще?”, а “как ${name} будет проявляться именно через ${lowerHouse}?”`,
+    resource: [
+      `В этой сфере года наблюдать, где проявляется тема карты: ${cardLine}.`,
+      `Смотреть, какие люди и события включают тему “${house.name}”, а не трактовать карту отдельно от жизни.`,
+      "Переводить символ в навык: что я могу сделать, сказать, выбрать, остановить или признать."
+    ],
+    shadow: [
+      "читать карту слишком общо и не связывать ее с конкретной сферой дома",
+      "перекладывать всю тему на других людей вместо наблюдения своей роли",
+      "ждать события, но не замечать ежедневных повторяющихся сигналов"
+    ],
+    practice: card.practice_steps,
+    eventMarkers: card.in_life,
+    questions: card.study_prompts || card.self_check_questions || [
+      houseQuestion,
+      "Через каких людей или события эта тема может стать видимой?",
+      "Что здесь нужно сделать практически, а не только понять?"
+    ],
+  };
+}
+
 function renderCardHero(card, kicker = "Карта") {
   const formula = card.display_formula || card.core_formula || "";
   return `<section class="hero-card">
@@ -152,23 +212,11 @@ function renderSolar() {
   const card = byId(DATA.cards, state.cardId);
   const house = byId(DATA.houses, state.houseId);
   const combo = findCombo(card, house);
-  const formula = combo?.core_formula || `В теме “${house.name}” карта “${card.name}” показывает, какие ситуации, люди и внутренние реакции будут чаще всего включать эту тему в течение года.`;
-  const cardLine = String(card.display_formula || card.core_formula || card.name).replace(/[.]+$/, "");
-  const resource = combo?.resource || [
-    `В этой сфере года наблюдать, где проявляется тема карты: ${cardLine}.`,
-    `Смотреть, какие люди и события включают тему “${house.name}”, а не трактовать карту отдельно от жизни.`,
-    "Переводить символ в навык: что я могу сделать, сказать, выбрать, остановить или признать."
-  ];
-  const shadow = combo?.shadow || [
-    "читать карту слишком общо и не связывать ее с конкретной сферой дома",
-    "перекладывать всю тему на других людей вместо наблюдения своей роли",
-    "ждать события, но не замечать ежедневных повторяющихся сигналов"
-  ];
-  const questions = combo?.self_check_questions || card.study_prompts || [
-    house.main_question,
-    "Через каких людей или события эта тема может стать видимой?",
-    "Что здесь нужно сделать практически, а не только понять?"
-  ];
+  const dynamic = solarHouseFocus(card, house);
+  const formula = combo?.core_formula || dynamic.formula;
+  const resource = combo?.resource || dynamic.resource;
+  const shadow = combo?.shadow || dynamic.shadow;
+  const questions = combo?.self_check_questions || dynamic.questions;
   return `
     <section class="hero-card">
       <p class="kicker">Карта + дом Соляра</p>
@@ -177,11 +225,11 @@ function renderSolar() {
     </section>
     <div class="chips">${(house.keywords || []).map((k) => `<span class="chip">${escapeHtml(k)}</span>`).join("")}</div>
     <div class="info-grid">
-      <section class="info-block wide"><h3>Как читать эту связку</h3><p class="prose">${escapeHtml(combo?.year_task || `${house.core_formula || house.main_question} Здесь важно спросить не “что значит ${card.name} вообще?”, а “как ${card.name} будет проявляться именно через ${house.name.toLowerCase()}?”`)}</p></section>
+      <section class="info-block wide"><h3>Как читать эту связку</h3><p class="prose">${escapeHtml(combo?.year_task || dynamic.yearTask)}</p></section>
       <section class="info-block resource"><h3>Что тренировать в этой сфере</h3>${list(resource)}</section>
       <section class="info-block shadow"><h3>Какие сигналы не пропустить</h3>${list(shadow)}</section>
-      <section class="info-block practice"><h3>Практические шаги</h3>${list(combo?.practice || card.practice_steps)}</section>
-      <section class="info-block observe"><h3>Что наблюдать в году</h3>${list(combo?.event_markers || card.in_life)}</section>
+      <section class="info-block practice"><h3>Практические шаги</h3>${list(combo?.practice || dynamic.practice)}</section>
+      <section class="info-block observe"><h3>Что наблюдать в году</h3>${list(combo?.event_markers || dynamic.eventMarkers)}</section>
       <section class="info-block wide"><h3>Вопросы дневника</h3>${list(questions)}</section>
     </div>
   `;
@@ -189,6 +237,7 @@ function renderSolar() {
 
 function renderDossier() {
   const card = byId(DATA.cards, state.cardId);
+  const house = byId(DATA.houses, state.houseId);
   const dossier = findDossier(card);
   if (!dossier) {
     return `
@@ -204,6 +253,15 @@ function renderDossier() {
     `;
   }
   const activeTab = dossier.tabs.find((tab) => tab.id === state.dossierTab) || dossier.tabs[0];
+  const solarFocus = activeTab.id === "solar" ? solarHouseFocus(card, house) : null;
+  const solarAddOn = solarFocus ? `
+    <div class="info-grid dossier-solar-add">
+      <section class="info-block wide"><h3>${escapeHtml(card.name)} · ${escapeHtml(house.name)}</h3><p class="prose">${escapeHtml(solarFocus.yearTask)}</p></section>
+      <section class="info-block resource"><h3>Что тренировать именно здесь</h3>${list(solarFocus.resource)}</section>
+      <section class="info-block shadow"><h3>На что обратить внимание</h3>${list(solarFocus.shadow)}</section>
+      <section class="info-block practice"><h3>Практика для дома</h3>${list(solarFocus.practice)}</section>
+    </div>
+  ` : "";
   return `
     <section class="hero-card">
       <p class="kicker">Полное учебное досье</p>
@@ -217,6 +275,7 @@ function renderDossier() {
       <h3>${escapeHtml(activeTab.name)}</h3>
       <div class="dossier-text">${escapeHtml(activeTab.content || "Раздел пока пуст.")}</div>
     </section>
+    ${solarAddOn}
     <div class="button-row">
       <button class="secondary" id="saveDossierNote">Записать мысль в дневник</button>
     </div>
