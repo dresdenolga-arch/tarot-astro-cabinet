@@ -577,3 +577,18 @@ dialog::backdrop{background:rgba(20,30,28,.55)}dialog textarea{min-height:280px}
 .login-card input:focus-visible{outline:3px solid #476454;outline-offset:3px}
 .login-card button{width:100%;margin-top:8px}.login-card button:disabled{opacity:.65;cursor:wait}
 #unlock-status{min-height:1.7em}#lock-cabinet{white-space:nowrap}
+
+.profile-topic{margin-top:36px;padding-top:26px;border-top:1px solid #dacfc2;scroll-margin-top:24px}
+.profile-topic h3{font-size:1.25rem;line-height:1.4}.profile-topic h3:focus{outline:none}
+.astro-basis{font-size:.88rem;line-height:1.5;color:#635e55;background:#f0ece4;border-radius:10px;padding:12px 14px}
+.profile-jump{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}
+.profile-jump button{font-size:.85rem;text-align:left;line-height:1.4;padding:8px 12px}
+.question-form-inline{margin-top:18px;padding:18px;background:#f8f4ec;border-radius:14px}
+.question-form-inline select{width:100%;box-sizing:border-box;font:inherit;min-height:44px;padding:10px;border:1px solid #b3a48e;border-radius:8px;background:#fff}
+.chart-basis, .profile-topic details{padding:16px;border:1px solid #dacfc2;border-radius:12px;margin:18px 0}
+.chart-basis summary,.profile-topic summary{cursor:pointer;font-weight:600;line-height:1.5}
+.chart-table-wrap{overflow-x:auto;margin:16px 0}
+.chart-table-wrap table{border-collapse:collapse;width:100%;font-size:.9rem}
+.chart-table-wrap th,.chart-table-wrap td{padding:10px;text-align:left;border-bottom:1px solid #d9d0c3;vertical-align:top}
+.chart-table-wrap th{background:#f0ece4}
+@media(max-width:640px){.question-form-inline{padding:12px}.profile-jump{display:grid;grid-template-columns:1fr}.chart-basis{padding:12px}}

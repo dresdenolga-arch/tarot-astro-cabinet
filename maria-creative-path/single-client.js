@@ -18,7 +18,7 @@ function cleanState(raw) {
       if (!own(ratings,result.feedback[section.id].rating || "")) result.feedback[section.id].rating = "";
     }
     for (const q of section.questions || []) {
-      if (raw.answers && own(raw.answers,q.id) && typeof raw.answers[q.id] === "string") result.answers[q.id] = raw.answers[q.id].slice(0,5000);
+      if (raw.answers && own(raw.answers,q.id) && typeof raw.answers[q.id] === "string") result.answers[q.id] = q.type === "rating" ? (own(ratings,raw.answers[q.id]) ? raw.answers[q.id] : "") : raw.answers[q.id].slice(0,5000);
     }
   }
   return result;
@@ -35,7 +35,7 @@ function formatFeedback(raw) {
     if (f.question && f.question.trim()) lines.push("Что обсудить:\n" + f.question.trim());
     for (const q of section.questions || []) {
       const value = state.answers[q.id];
-      if (value && value.trim()) lines.push(q.label + "\n" + value.trim());
+      if (value && value.trim()) lines.push(q.label + "\n" + (q.type === "rating" ? ratings[value] : value.trim()));
     }
     if (lines.length) blocks.push("РАЗДЕЛ: " + section.title + "\n" + lines.join("\n\n"));
   }
@@ -65,12 +65,25 @@ const esc = value => String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt
 const getSection = () => client.sections.find(s=>s.id === window.location.hash.replace(/^#\/?/,"")) || client.sections[0];
 function status(text) { const n=document.getElementById("page-status"); if(n)n.textContent=text; }
 function hasAnswers() { return Boolean(formatFeedback(state)); }
-function renderQuestions(section) {
+function renderQuestions(section,compact=false) {
   if (!(section.questions || []).length) return "";
-  return '<section class="question-form" aria-label="Вопросы к разделу"><h3>Ваш опыт</h3><p class="notice">Все ответы необязательны. Можно написать «не помню» или пропустить вопрос.</p>' +
+  return '<section class="question-form'+(compact?' question-form-inline':'')+'" aria-label="Вопросы к разделу">'+
+    (compact?'':'<h3>Ваш опыт</h3><p class="notice">Все ответы необязательны. Можно написать «не помню» или пропустить вопрос.</p>')+
     section.questions.map(q=>'<label for="answer-'+esc(q.id)+'">'+esc(q.label)+'</label>' +
       (q.hint ? '<span class="field-hint" id="hint-'+esc(q.id)+'">'+esc(q.hint)+'</span>' : "") +
-      '<textarea maxlength="5000" id="answer-'+esc(q.id)+'" data-answer="'+esc(q.id)+'"'+(q.hint?' aria-describedby="hint-'+esc(q.id)+'"':"")+'></textarea>').join("") + '</section>';
+      (q.type==="rating"
+        ? '<select id="answer-'+esc(q.id)+'" data-answer="'+esc(q.id)+'"'+(q.hint?' aria-describedby="hint-'+esc(q.id)+'"':"")+'><option value="">Выберите, если хотите</option>'+Object.entries(ratings).map(([key,label])=>'<option value="'+key+'">'+esc(label)+'</option>').join("")+'</select>'
+        : '<textarea maxlength="5000" id="answer-'+esc(q.id)+'" data-answer="'+esc(q.id)+'"'+(q.hint?' aria-describedby="hint-'+esc(q.id)+'"':"")+'></textarea>')
+    ).join("") + '</section>';
+}
+function renderSectionBody(section) {
+  if(!section.blocks?.length)return section.body+renderQuestions(section);
+  const grouped=new Set(section.blocks.flatMap(block=>block.questionIds||[]));
+  return section.body+
+    '<nav class="profile-jump" aria-label="Темы личного профиля">'+section.blocks.map(block=>'<button type="button" class="ghost-button" data-topic="'+esc(block.id)+'">'+esc(block.title)+'</button>').join("")+'</nav>'+
+    section.blocks.map(block=>'<section class="profile-topic" aria-labelledby="topic-'+esc(block.id)+'"><h3 tabindex="-1" id="topic-'+esc(block.id)+'">'+esc(block.title)+'</h3><p class="astro-basis">'+esc(block.basis)+'</p>'+block.body+
+      renderQuestions({questions:(section.questions||[]).filter(q=>(block.questionIds||[]).includes(q.id))},true)+'</section>').join("")+
+    renderQuestions({questions:(section.questions||[]).filter(q=>!grouped.has(q.id))});
 }
 function render() {
   const section = getSection();
@@ -78,7 +91,7 @@ function render() {
   document.getElementById("app").innerHTML =
     '<div class="shell"><header class="topbar"><div class="brand"><div class="brand-mark" aria-hidden="true">М</div><div class="brand-text"><div class="brand-title">Мария</div><div class="brand-subtitle">Предварительный разбор</div></div></div><nav class="nav" aria-label="Разделы кабинета">' +
     client.sections.map(s=>'<button type="button" data-section="'+esc(s.id)+'" class="'+(s.id===section.id?"active":"")+'"'+(s.id===section.id?' aria-current="page"':"")+'>'+esc(s.title)+'</button>').join("") +
-    '</nav><button type="button" class="ghost-button" id="lock-cabinet">Закрыть кабинет</button></header><main class="main"><section class="page-head"><div><div class="eyebrow">Творчество и профессиональное направление</div><h1>Мария</h1><p class="lead">'+esc(client.intro)+'</p></div></section><section class="section-layout"><article class="content-card"><div class="eyebrow">'+esc(section.summary)+'</div><h2 tabindex="-1" id="section-title">'+esc(section.title)+'</h2>'+section.body+renderQuestions(section)+
+    '</nav><button type="button" class="ghost-button" id="lock-cabinet">Закрыть кабинет</button></header><main class="main"><section class="page-head"><div><div class="eyebrow">Творчество и профессиональное направление</div><h1>Мария</h1><p class="lead">'+esc(client.intro)+'</p></div></section><section class="section-layout"><article class="content-card"><div class="eyebrow">'+esc(section.summary)+'</div><h2 tabindex="-1" id="section-title">'+esc(section.title)+'</h2>'+renderSectionBody(section)+
     '<div class="next-card"><h3>Следующий шаг</h3><p>'+esc(section.next || client.defaultNext)+'</p></div></article><aside class="feedback-card" aria-label="Обратная связь"><h3>Ваш отклик</h3><p>Можно не соглашаться и поправлять описание. Оценка не выбрана заранее.</p><label for="rating">Насколько подходит этот раздел?</label><select id="rating" data-feedback="rating"><option value="">Выберите, если хотите</option>'+
     Object.entries(ratings).map(([k,v])=>'<option value="'+k+'">'+esc(v)+'</option>').join("")+'</select>'+
     '<label for="hit">Что подходит? Пример из жизни</label><textarea maxlength="5000" id="hit" data-feedback="hit"></textarea><label for="miss">Что не подходит или требует поправки?</label><textarea maxlength="5000" id="miss" data-feedback="miss"></textarea><label for="question">Что хочется обсудить?</label><textarea maxlength="5000" id="question" data-feedback="question"></textarea>'+
@@ -98,6 +111,10 @@ function render() {
     el.value = state.answers[el.dataset.answer] || "";
     el.addEventListener("input",()=>{state.answers[el.dataset.answer]=el.value;dirty=true;status("Ответ изменён. При переходе между разделами он сохранится в этой вкладке.");});
   });
+  document.querySelectorAll("[data-topic]").forEach(button=>button.addEventListener("click",()=>{
+    const target=document.getElementById("topic-"+button.dataset.topic);
+    if(target){target.scrollIntoView({block:"start"});target.focus({preventScroll:true});}
+  }));
   document.querySelectorAll("[data-section]").forEach(button=>button.addEventListener("click",()=>{window.location.hash=button.dataset.section;}));
   document.getElementById("lock-cabinet").addEventListener("click",()=>window.location.reload());
   document.getElementById("save").addEventListener("click",async()=>{

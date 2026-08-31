@@ -82,7 +82,7 @@ form.addEventListener("submit",async event=>{
       removeItem:(...args)=>window.localStorage.removeItem(...args)
     });
     const script=document.createElement("script");
-    script.src="./single-client.js";
+    script.src="./single-client.js?v=profile-2";
     await new Promise((resolve,reject)=>{script.onload=resolve;script.onerror=reject;document.body.appendChild(script);});
     document.getElementById("login-screen").remove();
     document.querySelector("h1")?.focus();
