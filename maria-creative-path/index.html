@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<title>Личный кабинет — вход</title><link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main id="login-screen" class="login-screen">
+<section class="login-card" aria-labelledby="login-title">
+<div class="eyebrow">Личный кабинет</div>
+<h1 id="login-title">Добро пожаловать</h1>
+<p>Введите пароль, который вам передала Ольга, чтобы открыть разбор и вопросы.</p>
+<form id="unlock-form">
+<label for="cabinet-password">Пароль</label>
+<input id="cabinet-password" name="password" type="password" autocomplete="current-password" inputmode="numeric" required aria-describedby="password-note">
+<p id="password-note" class="notice">Пароль нужен при каждом открытии страницы. Не передавайте его посторонним.</p>
+<button class="primary-button" id="unlock-button" type="submit">Открыть кабинет</button>
+<p id="unlock-status" role="status" aria-live="polite"></p>
+</form>
+<p class="notice">Содержимое зашифровано и открывается в вашем браузере. Доступ получает любой, кто знает пароль. После работы нажмите «Закрыть кабинет».</p>
+<noscript>Для расшифровки и обратной связи включите JavaScript.</noscript>
+</section>
+</main>
+<div id="app"></div><script src="./unlock.js"></script>
+</body></html>
